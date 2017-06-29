@@ -1,0 +1,30 @@
+<md-card class="loginForm">
+
+     <md-card-header class="">
+    <md-card-title>Login Form</md-card-title>
+  </md-card-header>
+    <form [formGroup]="loginForm" (ngSubmit)="login()">
+        <div class="form-section">
+            <md-card-content>
+                <md-input-container class="example-full-width">
+                    <input type="text" mdInput placeholder="UserName or Email" name="username" id="username" formControlName="username">
+                </md-input-container>
+                <md-input-container class="example-full-width">
+                    <input type="password" mdInput placeholder="Password" name="password" id="password" formControlName="password">
+                </md-input-container>
+            </md-card-content>
+        </div>
+    </form>
+    <md-card-actions>
+        <div class="button-row" style="padding-bottom : 5px;">
+            <button md-raised-button class="loginbtn">Login</button>
+        </div>
+    </md-card-actions>
+</md-card>
+<div class="button-row signuplink">
+    <button md-raised-button class="signupbtn" (click)="doSignUp()">Signup</button>
+</div>
+
+<div class="button-row gsignuplink">
+    <a link="" class="hand"><img src="/assets/images/google.jpg"/></a>
+</div>

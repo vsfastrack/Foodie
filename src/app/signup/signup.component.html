@@ -1,0 +1,26 @@
+<md-card class="loginForm">
+  <md-card-header class="">
+    <md-card-title>Signup Form</md-card-title>
+  </md-card-header>
+  <form [formGroup]="signupForm">
+    <div class="form-section">
+      <md-card-content>
+        <md-input-container class="example-full-width">
+          <input type="text" mdInput placeholder="Name" name="username" id="nameHash" formControlName="name">
+        </md-input-container>
+        <md-input-container class="example-full-width">
+          <input type="email" mdInput placeholder="Email" name="email" id="emailHash" formControlName="email">
+        </md-input-container>
+        <md-input-container class="example-full-width">
+          <input type="phone" mdInput placeholder="Contact Number" name="phone" id="phoneHash" formControlName="phone">
+        </md-input-container>
+        <md-input-container class="example-full-width">
+          <input type="password" mdInput placeholder="Password" name="password" id="password" formControlName="password">
+        </md-input-container>
+      </md-card-content>
+    </div>
+  </form>
+  <div class="button-row">
+    <button type="submit" md-raised-button class="signupbtn" (click)="signup(signupForm)">Signup</button>
+   </div>
+</md-card>

@@ -1,0 +1,11 @@
+.headerColor{
+    background-color: blue;
+}
+.header-section{
+    background: #3f51b5;
+    color : white
+}
+.center-align{
+    margin-left: 45%;
+    font-size: 30px;
+}

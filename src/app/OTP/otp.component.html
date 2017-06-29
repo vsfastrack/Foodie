@@ -1,0 +1,17 @@
+<md-card class="loginForm">
+  <md-card-header class="">
+    <md-card-title>Enter OTP Received</md-card-title>
+  </md-card-header>
+  <form [formGroup]="otpForm">
+    <div class="form-section">
+      <md-card-content>
+        <md-input-container class="example-full-width">
+          <input type="text" mdInput placeholder="Enter your OTP" name="username" id="nameHash" formControlName="otp">
+        </md-input-container>
+      </md-card-content>
+    </div>
+  </form>
+  <div class="button-row">
+    <button type="submit" md-raised-button class="signupbtn" (click)="submitotp(otpForm)">Signup</button>
+   </div>
+</md-card>

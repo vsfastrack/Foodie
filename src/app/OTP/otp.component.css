@@ -1,0 +1,23 @@
+.loginForm{
+    width : 35%;
+    margin-top : 3%;
+    margin-left : 30%;
+}
+.example-full-width {
+  width: 100%;
+}
+.form-section{
+    margin-top : 10%;
+}
+.backgroun-color{
+    background-color: gainsboro;
+}
+.button-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+}
+.signupbtn{
+    background: #3f51b5;
+    color : white;
+}
