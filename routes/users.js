@@ -12,7 +12,53 @@ const opts = otplib.authenticator.options;
 const secret = otplib.authenticator.generateSecret();
 
 const User = require('../models/user');
+var NodeGeocoder = require('node-geocoder');
+ 
+var options = {
+  provider: 'google',
+ 
+  // Optional depending on the providers 
+  httpAdapter: 'https', // Default 
+  apiKey: 'AIzaSyDIbIVZhNhmTMS1FF-4WMS-XHBxGX4U8Rc', // for Mapquest, OpenCage, Google Premier 
+  formatter: null         // 'gpx', 'string', ... 
+};
+ 
+var geocoder = NodeGeocoder(options);
+
 var token;
+function findGeoCodebyAddress(addressString){
+    google_geocoding.geocode(addressString, function(err, location) {
+    if( err ) {
+        console.log('Error: ' + err);
+    } else if( !location ) {
+        console.log('No result.');
+    } else {
+        console.log('Latitude: ' + location.lat + ' ; Longitude: ' + location.lng);
+    }
+});
+}
+function findAddressbyGeoCoords(latitude , longitude ,callback){ 
+       geocoder.reverse({lat:latitude, lon:longitude}, function(err, res) {
+       var address ={
+           "streetNumber" : res[0].streetNumber,
+           "streetName":res[0].streetName,
+           "city": res[0].city,
+            "state" : res[0].administrativeLevels.level1long,
+            "zipCode": res[0].zipcode,
+            "neighbourhood" : res[0].neighborhood,
+            "fullAddress" :  res[0].formattedAddress,
+            "googlePlaceId": res[0].extra.googlePlaceId
+       } ;
+       console.log(address);
+       User.updateAddress(address , (err,user) => {
+            if(err){
+            res.json({success : false , msg : 'User cannot be registered'});
+            }else{
+            res.json({success : true , msg : 'User is successfully registered'});
+            }
+         })
+    });
+}
 
 let transporter = nodemailer.createTransport({
     host: 'smtp.gmail.com',
@@ -103,6 +149,24 @@ router.post('/verifyOTP',(req,res,next) =>{
         }
     }
 });
+//saveorUpdateAddress
+router.post('/saveaddress',(req,res,next) =>{
+    if(req!=null && req.body.address != null && req.body.address.loc != null && req.body.address.loc.lat != null && req.body.address.loc.long != null){
+        findAddressbyGeoCoords(req.body.address.loc.lat , req.body.address.loc.long ,(err ,data) =>{
+            if(err) throw err;
+            console.log("In the save address method"+data);
+            User.updateAddress(data , (err,user) => {
+            if(err){
+            res.json({success : false , msg : 'User cannot be registered'});
+            }else{
+            res.json({success : true , msg : 'User is successfully registered'});
+            }
+         })
+        });
+    }
+});
+
+
 
 //Profile
 router.post('/profile',(req,res,next) =>{
