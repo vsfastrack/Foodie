@@ -100,6 +100,8 @@ const userSchema = mongoose.Schema({
 });
 
 
+//var newUser = new user();
+
 module.exports.getuserById = function (id, callback) {
     user.findById(id, callback);
 }
@@ -118,8 +120,14 @@ module.exports.addUser = function (newUser, callback) {
         });
     });
 }
-module.exports.updateAddress = function(address , callback){
-    console.log("In the user method");
+
+userSchema.statics.updateAddress = function(email , address , callback){
+    console.log("In the updateAddress function"+address+"   "+email);
+    mongoose.set('debug', true);
+    var query = { email: email };
+    var options = {new : true ,upsert : true};
+    var User = mongoose.model('User' , userSchema);
+    User.findOneAndUpdate(query, { address: address[0] }, options, callback);
 }
 module.exports.ComparePassword = function (candidatePassword, hash, callback) {
     bcrypt.compare(candidatePassword, hash, (err, isMatch) => {
@@ -128,5 +136,5 @@ module.exports.ComparePassword = function (candidatePassword, hash, callback) {
     });
 }
 
-
 const user = module.exports = mongoose.model('user', userSchema);
+
