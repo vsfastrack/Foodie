@@ -1,2 +1,2 @@
-# ShareSeat
-Simple MEAN app to implement your seat sharing
+# Foodie
+Mean app for food order and delivery
