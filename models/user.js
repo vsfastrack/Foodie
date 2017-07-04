@@ -105,12 +105,17 @@ const userSchema = mongoose.Schema({
 //var newUser = new user();
 var User = mongoose.model('User' , userSchema);
 
-module.exports.getuserById = function (id, callback) {
+userSchema.statics.getuserById = function (id, callback) {
     user.findById(id, callback);
 }
 
-module.exports.getuserByName = function (username, callback) {
+userSchema.statics.getuserByName = function (username, callback) {
     const query = { username: username };
+    user.findOne(query, callback);
+}
+
+userSchema.statics.getuserByEmail = function (email, callback) {
+    const query = { email: email };
     user.findOne(query, callback);
 }
 
@@ -140,7 +145,7 @@ userSchema.statics.verifyUser = function(email , otp , callback){
     User.findOneAndUpdate(query, {$set:[{ otp : null } , {IsVerified : true}]}, callback)*/
 }
 
-module.exports.ComparePassword = function (candidatePassword, hash, callback) {
+userSchema.statics.ComparePassword = function (candidatePassword, hash, callback) {
     bcrypt.compare(candidatePassword, hash, (err, isMatch) => {
         if (err) throw err;
         callback(null, isMatch);

@@ -190,10 +190,11 @@ router.get('/validate', (req, res, next) => {
 
 
 //AUTHENTICATE
-router.post('/authenticate', (req, res, next) => {
+router.post('/login', (req, res, next) => {
     const username = req.body.username;
     const password = req.body.password;
-
+    const email    = req.body.email;
+    if(username != null){
     User.getuserByName(username, (err, user) => {
         if (err) throw err;
         if (!user) {
@@ -225,6 +226,44 @@ router.post('/authenticate', (req, res, next) => {
             }
         });
     })
+    }else if(email != null){
+            User.getuserByEmail(email, (err, user) => {
+        if (err) throw err;
+        if (!user) {
+            return res.json({
+                success: false,
+                msg: 'user not found'
+            })
+        }
+        User.ComparePassword(password, user.password, (err, IsMatch) => {
+            if (err) throw err;
+            if (IsMatch) {
+                const token = jwt.sign(user, config.secret, {
+                    expiresIn: 3600
+                })
+                res.json({
+                    success: true,
+                    token: 'JWT' + token,
+                    user: {
+                        id: user.id,
+                        username: user.username,
+                        email: user.email
+                    }
+                })
+            } else {
+                return res.json({
+                    success: false,
+                    msg: 'Not Authorized'
+                })
+            }
+        });
+    })
+    }
+
 });
 
+//login
+router.post('/validate', (req, res, next) => {
+    
+});
 module.exports = router;
