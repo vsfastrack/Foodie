@@ -44,6 +44,7 @@ function findAddressbyGeoCoords(latitude, longitude, callback) {
     geocoder.reverse({ lat: latitude, lon: longitude }, function (err, res) {
         if (err) throw err;
         if (res) {
+            var coords = [latitude , longitude];
             var address = {
                 "streetNumber": res[0].streetNumber,
                 "streetName": res[0].streetName,
@@ -52,9 +53,13 @@ function findAddressbyGeoCoords(latitude, longitude, callback) {
                 "zipCode": res[0].zipcode,
                 "neighbourhood": res[0].neighborhood,
                 "fullAddress": res[0].formattedAddress,
-                "googlePlaceId": res[0].extra.googlePlaceId
+                "googlePlaceId": res[0].extra.googlePlaceId,
+                "addressType" : "Home",
+                "loc":{
+                    coordinates : coords
+                }
             };
-            callback(err , res);
+            callback(err , address);
         }
    });
 }
@@ -120,7 +125,9 @@ router.post('/register', (req, res, next) => {
                 email: req.body.email,
                 password: req.body.password,
                 username: req.body.username,
-                otp: token
+                otp: token,
+                IsVerified : false,
+                createdDate : new Date()
             });
 
             User.addUser(newUser, (err, user) => {
@@ -141,11 +148,12 @@ router.post('/verifyOTP', (req, res, next) => {
     // res.send('REGISTER');
     //const  isValid = otplib.authenticator.check(token, secret);
     if (req && req.body && req.body.otp && req.body.email) {
-        if (req.body.otp == (token)) {
-            res.json({ success: true, msg: 'User verified' });
-        } else {
-            res.json({ success: false, msg: 'User cannot be verified' });
-        }
+        User.verifyUser(req.body.email , req.body.otp , (err , user ) =>{
+            if(err) throw err;
+            else{
+                 res.json({ success: true, msg: 'User is successfully verified' });
+            }
+        })
     }
 });
 //saveorUpdateAddress
@@ -156,9 +164,9 @@ router.post('/saveaddress', (req, res, next) => {
            // console.log("In the save address method" + data);
             User.updateAddress(req.body.email ,data, (err, user) => {
                 if (err) {
-                    res.json({ success: false, msg: 'User cannot be registered' });
+                    res.json({ success: false, msg: 'User address cannot be saved' });
                 } else {
-                    res.json({ success: true, msg: 'User is successfully registered' });
+                    res.json({ success: true, msg: 'User address Saved' });
                 }
             });
             

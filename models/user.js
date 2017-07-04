@@ -96,11 +96,14 @@ const userSchema = mongoose.Schema({
                 price: Number
             }
         ]
-    }
+    },
+    IsVerified : Boolean,
+    createdDate : Date
 });
 
 
 //var newUser = new user();
+var User = mongoose.model('User' , userSchema);
 
 module.exports.getuserById = function (id, callback) {
     user.findById(id, callback);
@@ -111,7 +114,7 @@ module.exports.getuserByName = function (username, callback) {
     user.findOne(query, callback);
 }
 
-module.exports.addUser = function (newUser, callback) {
+userSchema.statics.addUser = function (newUser, callback) {
     bcrypt.genSalt(10, (err, salt) => {
         bcrypt.hash(newUser.password, salt, (err, hash) => {
             if (err) throw err;
@@ -122,13 +125,21 @@ module.exports.addUser = function (newUser, callback) {
 }
 
 userSchema.statics.updateAddress = function(email , address , callback){
-    console.log("In the updateAddress function"+address+"   "+email);
     mongoose.set('debug', true);
     var query = { email: email };
-    var options = {new : true ,upsert : true};
-    var User = mongoose.model('User' , userSchema);
-    User.findOneAndUpdate(query, { address: address[0] }, options, callback);
+    var options = {upsert : true};
+    //User.Update(query, {$push: { addrerssList : address }}, options, function(err){console.log(err);})     
+    User.findOneAndUpdate(query, {$push: { addrerssList : address }}, options, callback)
 }
+userSchema.statics.verifyUser = function(email , otp , callback){
+    mongoose.set('debug', true);
+    var conditions = { $and: [ { email : email }, { otp : otp } ] }
+    var update = {$set : [{otp : null} , {IsVerified : true}]}
+    User.update(conditions, update, callback)
+/*    var query =  { $and: [ { email : email }, { otp : otp } ] }
+    User.findOneAndUpdate(query, {$set:[{ otp : null } , {IsVerified : true}]}, callback)*/
+}
+
 module.exports.ComparePassword = function (candidatePassword, hash, callback) {
     bcrypt.compare(candidatePassword, hash, (err, isMatch) => {
         if (err) throw err;
