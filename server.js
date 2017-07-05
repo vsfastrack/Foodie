@@ -19,6 +19,7 @@ const port = 3000;
 
 const users = require('./routes/users');
 const otplib = require('./routes/otp');
+const common = require('./routes/common');
 
 app.use(cors());
 
@@ -30,6 +31,7 @@ app.use(passport.session());
 require('./config/passport')(passport);
 app.use('/users',users);
 app.use('/otp',otplib);
+app.use('/common',common);
 
 app.get('/', function(req,res){
     res.send('Invalid endpoint');
