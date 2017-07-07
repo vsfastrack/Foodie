@@ -15,8 +15,7 @@ const userSchema = mongoose.Schema({
         unique: true
     },
     username: {
-        type: String,
-        required: true
+        type: String
     },
     password: {
         type: String,
@@ -98,7 +97,7 @@ const userSchema = mongoose.Schema({
         ]
     },
     IsVerified : Boolean,
-    createdDate : Date
+    createdDate : { type: Date, default: Date.now },
 });
 
 
@@ -136,10 +135,10 @@ userSchema.statics.updateAddress = function(email , address , callback){
     //User.Update(query, {$push: { addrerssList : address }}, options, function(err){console.log(err);})     
     User.findOneAndUpdate(query, {$push: { addrerssList : address }}, options, callback)
 }
-userSchema.statics.verifyUser = function(email , otp , callback){
+userSchema.statics.verifyUser = function(email , callback){
     mongoose.set('debug', true);
-    var conditions = { $and: [ { email : email }, { otp : otp } ] }
-    var update = {$set : [{otp : null} , {IsVerified : true}]}
+    var conditions = { email : email }
+    var update = {$set : {IsVerified : true}}
     User.update(conditions, update, callback)
 /*    var query =  { $and: [ { email : email }, { otp : otp } ] }
     User.findOneAndUpdate(query, {$set:[{ otp : null } , {IsVerified : true}]}, callback)*/

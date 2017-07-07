@@ -3,267 +3,167 @@ const router = express.Router();
 const passport = require('passport');
 const jwt = require('jsonwebtoken');
 const config = require('../config/dbconfig');
-const otplib = require('otplib').default;
-const nodemailer = require('nodemailer');
-otplib.authenticator.options = {
-    step: 30
-}
-const opts = otplib.authenticator.options;
-const secret = otplib.authenticator.generateSecret();
+const commonlib_addressMapper = require('../common-utils/address-mapper');
+const commonlib_mailer = require('../common-utils/mailer');
+const commonlib_otpgenerator = require('../common-utils/otp-generator');
 
 const User = require('../models/user');
 
-
-
-var NodeGeocoder = require('node-geocoder');
-
-var options = {
-    provider: 'google',
-
-    // Optional depending on the providers 
-    httpAdapter: 'https', // Default 
-    apiKey: 'AIzaSyDIbIVZhNhmTMS1FF-4WMS-XHBxGX4U8Rc', // for Mapquest, OpenCage, Google Premier 
-    formatter: null         // 'gpx', 'string', ... 
-};
-
-var geocoder = NodeGeocoder(options);
-
-var token;
-function findGeoCodebyAddress(addressString) {
-    google_geocoding.geocode(addressString, function (err, location) {
-        if (err) {
-            console.log('Error: ' + err);
-        } else if (!location) {
-            console.log('No result.');
-        } else {
-            console.log('Latitude: ' + location.lat + ' ; Longitude: ' + location.lng);
-        }
-    });
-}
-function findAddressbyGeoCoords(latitude, longitude, callback) {
-    geocoder.reverse({ lat: latitude, lon: longitude }, function (err, res) {
-        if (err) throw err;
-        if (res) {
-            var coords = [latitude , longitude];
-            var address = {
-                "streetNumber": res[0].streetNumber,
-                "streetName": res[0].streetName,
-                "city": res[0].city,
-                "state": res[0].administrativeLevels.level1long,
-                "zipCode": res[0].zipcode,
-                "neighbourhood": res[0].neighborhood,
-                "fullAddress": res[0].formattedAddress,
-                "googlePlaceId": res[0].extra.googlePlaceId,
-                "addressType" : "Home",
-                "loc":{
-                    coordinates : coords
-                }
-            };
-            callback(err , address);
-        }
-   });
-}
-
-let transporter = nodemailer.createTransport({
-    host: 'smtp.gmail.com',
-    port: 465,
-    secure: true, // secure:true for port 465, secure:false for port 587
-    auth: {
-        user: 'vebs6111992@gmail.com',
-        pass: 'vebs661993'
-    }
-});
-function sendOTPThorughMail(req, token) {
-    let mailOptions = {
-        from: '"no-reply@ShareSeat.com 👻" <vsfastrack@gmail.com>', // sender address
-        to: req.body.email, // list of receivers
-        subject: 'One TIme Password for verification for ShareSeat', // Subject line
-        text: 'Hello world ?', // plain text body
-        html: '<b>One Time Password For Signup Verification at Shareseat.com</b><h1>' + token + '</h1>' // html body
-    };
-
-    transporter.sendMail(mailOptions, (error, info) => {
-        if (error) {
-            //res.json({success : false , msg : 'Sorry user cannot be verified'});
-            return false;
-        } else {
-            //console.log('Message %s sent: %s', info.messageId, info.response);
-            //res.json({success : true , msg : 'OTP sent to your email !!! Please check your email'});
-            saveUser()
-            return true;
-        }
-    });
-}
-function generateAndSendOTP() {
-    token = otplib.authenticator.generate(secret, opts);
-    return token;
-}
 //Register
 router.post('/register', (req, res, next) => {
-    // res.send('REGISTER');
-    generateAndSendOTP();
-
-    //Sned otp to specified email:
-    let mailOptions = {
-        from: '"no-reply@ShareSeat.com 👻" <vsfastrack@gmail.com>', // sender address
-        to: req.body.email, // list of receivers
-        subject: 'One TIme Password for verification for ShareSeat', // Subject line
-        text: 'Hello world ?', // plain text body
-        html: '<b>One Time Password For Signup Verification at Shareseat.com</b><h1>' + token + '</h1>' // html body
-    };
-
-    transporter.sendMail(mailOptions, (error, info) => {
-        if (error) {
-            res.json({ success: false, msg: 'Sorry user cannot be verified' });
-            //return false;
-        } else {
-            //console.log('Message %s sent: %s', info.messageId, info.response);
-
-            //module to save User
-            let newUser = new User({
-                name: req.body.name,
-                email: req.body.email,
-                password: req.body.password,
-                username: req.body.username,
-                otp: token,
-                IsVerified : false,
-                createdDate : new Date()
+    //generate_OTP
+    commonlib_otpgenerator.generate_OTP((err, otp) => {
+        if (err) throw err;
+        if (otp) {
+            commonlib_mailer.send_Mail(req.body.email, otp, (err, data) => {
+                if (err) throw err;
+                //res.json({ success: true, msg: 'OTP sent' + data });
+                populateUserModel(req, (userModel) => {
+                    User.addUser(userModel, (err, user) => {
+                        if (err) {
+                            res.json({ success: false, msg: 'User cannot be registered' });
+                        } else {
+                            res.json({ success: true, msg: 'User is successfully registered' });
+                        }
+                    });
+                });
             });
-
-            User.addUser(newUser, (err, user) => {
-                if (err) {
-                    res.json({ success: false, msg: 'User cannot be registered' });
-                } else {
-                    res.json({ success: true, msg: 'User is successfully registered' });
-                }
-            })
-
-            //res.json({success : true , msg : 'OTP sent to your email !!! Please check your email'});    
         }
     });
 });
 
 //verifyOTP
 router.post('/verifyOTP', (req, res, next) => {
-    // res.send('REGISTER');
-    //const  isValid = otplib.authenticator.check(token, secret);
-    if (req && req.body && req.body.otp && req.body.email) {
-        User.verifyUser(req.body.email , req.body.otp , (err , user ) =>{
+    if (req && req.body && req.body.otp) {
+        commonlib_otpgenerator.verify_OTP(req.body.otp , (err , result) =>{
             if(err) throw err;
-            else{
-                 res.json({ success: true, msg: 'User is successfully verified' });
+            if(result){
+                if(req.body.email != null){
+                    User.verifyUser(req.body.email , (err , result) =>{
+                         res.json({ success: true, msg: 'User verified' });  
+                    });
+                }else{
+                    res.json({ success: false, msg: 'User verified email not sent' });
+                }
+   
+            }else{
+              res.json({ success: true, msg: 'User not verified' });  
             }
-        })
+        });
     }
 });
 //saveorUpdateAddress
 router.post('/saveaddress', (req, res, next) => {
     if (req != null && req.body.address != null && req.body.address.loc != null && req.body.address.loc.lat != null && req.body.address.loc.long != null) {
-        findAddressbyGeoCoords(req.body.address.loc.lat, req.body.address.loc.long, (err, data) => {
+        commonlib_addressMapper.address_reversegeoCode(req.body.address.loc.lat, req.body.address.loc.long, (err, data) => {
             if (err) throw err;
-           // console.log("In the save address method" + data);
-            User.updateAddress(req.body.email ,data, (err, user) => {
+            User.updateAddress(req.body.email, data, (err, user) => {
                 if (err) {
                     res.json({ success: false, msg: 'User address cannot be saved' });
                 } else {
                     res.json({ success: true, msg: 'User address Saved' });
                 }
             });
-            
         });
     }
 });
-
-
-
-//Profile
-router.post('/profile', (req, res, next) => {
-    console.log(req.body);
-    res.send('PROFILE');
-});
-
-
-//VALIDATE
-router.get('/validate', (req, res, next) => {
-    res.send('VALIDATE');
-});
-
 
 //AUTHENTICATE
 router.post('/login', (req, res, next) => {
     const username = req.body.username;
     const password = req.body.password;
-    const email    = req.body.email;
-    if(username != null){
-    User.getuserByName(username, (err, user) => {
-        if (err) throw err;
-        if (!user) {
-            return res.json({
-                success: false,
-                msg: 'user not found'
-            })
-        }
-        User.ComparePassword(password, user.password, (err, IsMatch) => {
+    const email = req.body.email;
+    if (username != null) {
+        User.getuserByName(username, (err, user) => {
             if (err) throw err;
-            if (IsMatch) {
-                const token = jwt.sign(user, config.secret, {
-                    expiresIn: 3600
-                })
-                res.json({
-                    success: true,
-                    token: 'JWT' + token,
-                    user: {
-                        id: user.id,
-                        username: user.username,
-                        email: user.email
-                    }
-                })
-            } else {
+            if (!user) {
                 return res.json({
                     success: false,
-                    msg: 'Not Authorized'
+                    msg: 'user not found'
                 })
             }
-        });
-    })
-    }else if(email != null){
-            User.getuserByEmail(email, (err, user) => {
-        if (err) throw err;
-        if (!user) {
-            return res.json({
-                success: false,
-                msg: 'user not found'
-            })
-        }
-        User.ComparePassword(password, user.password, (err, IsMatch) => {
+            User.ComparePassword(password, user.password, (err, IsMatch) => {
+                if (err) throw err;
+                if (IsMatch) {
+                    const token = jwt.sign(user, config.secret, {
+                        expiresIn: 3600
+                    })
+                    res.json({
+                        success: true,
+                        token: 'JWT' + token,
+                        user: {
+                            id: user.id,
+                            username: user.username,
+                            email: user.email
+                        }
+                    })
+                } else {
+                    return res.json({
+                        success: false,
+                        msg: 'Not Authorized'
+                    })
+                }
+            });
+        })
+    } else if (email != null) {
+        User.getuserByEmail(email, (err, user) => {
             if (err) throw err;
-            if (IsMatch) {
-                const token = jwt.sign(user, config.secret, {
-                    expiresIn: 3600
-                })
-                res.json({
-                    success: true,
-                    token: 'JWT' + token,
-                    user: {
-                        id: user.id,
-                        username: user.username,
-                        email: user.email
-                    }
-                })
-            } else {
+            if (!user) {
                 return res.json({
                     success: false,
-                    msg: 'Not Authorized'
+                    msg: 'user not found'
                 })
             }
-        });
-    })
+            User.ComparePassword(password, user.password, (err, IsMatch) => {
+                if (err) throw err;
+                if (IsMatch) {
+                    const token = jwt.sign(user, config.secret, {
+                        expiresIn: 3600
+                    })
+                    res.json({
+                        success: true,
+                        token: 'JWT' + token,
+                        user: {
+                            id: user.id,
+                            username: user.username,
+                            email: user.email
+                        }
+                    })
+                } else {
+                    return res.json({
+                        success: false,
+                        msg: 'Not Authorized'
+                    })
+                }
+            });
+        })
     }
 
 });
 
-//login
-router.post('/validate', (req, res, next) => {
-    
+//sendBillthorughMail
+router.post('/sendBill', (req, res, next) => {
+    // res.send('REGISTER');
+    //const  isValid = otplib.authenticator.check(token, secret);
+    if (req && req.body && req.body.bill && req.body.email) {
+        commonlib_mailer.send_Mail(req.body.email, "This is test message", (err, data) => {
+            if (err) throw err;
+            res.json({ success: true, msg: 'User address Saved' + data });
+        });
+    }
 });
+
+/*********************************Utility methods for userModel***************************************/
+function populateUserModel(req, callback) {
+    let newUser = new User({
+        name: req.body.name,
+        email: req.body.email,
+        password: req.body.password,
+        username: req.body.username,
+        IsVerified: false,
+        createdDate: new Date()
+    });
+    callback(newUser);
+}
+
 module.exports = router;
