@@ -1,7 +1,7 @@
 var https = require('https');
-const MSG_API_KEY = 'babde38e';
-const MSG_API_SECRET = 'aabc3598311d9e70';
-const MSG_SENDER = '+918384882725';
+const MSG_API_KEY = '[API_KEY_NEXMO_OR_TWILLIO]]';
+const MSG_API_SECRET = '[API_SECRET_NEXMO_OR_TWILLIO]';
+const MSG_SENDER = '[REGISTERED NUMBER WITH NEXMO_OR_TWILLIO]';
 
 var options = {
   host: 'rest.nexmo.com',

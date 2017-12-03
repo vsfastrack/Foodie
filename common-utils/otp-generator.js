@@ -25,7 +25,7 @@ module.exports = {
     },
     verify_OTP: function verifyOTP(sent_token, callback) {
         try {
-         var result = GA.verify(sent_token , GA.encode('JEQG2IDBEBSHEZLBNVSXE==='));
+         var result = GA.verify(sent_token , GA.encode('[16_BASE_SECRET_KEY_FOR_OTPLIB]]'));
          callback(null , result)
         }
         catch (ex) {

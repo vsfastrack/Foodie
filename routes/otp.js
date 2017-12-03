@@ -16,8 +16,8 @@ let transporter = nodemailer.createTransport({
     port: 465,
     secure: true, // secure:true for port 465, secure:false for port 587
     auth: {
-        user: 'vebs6111992@gmail.com',
-        pass: 'vebs661993'
+        user: '[NODE_MAILER_USERNAME]',
+        pass: '[NODE_MAILER_PASSWORD]]'
     }
 });
 
@@ -25,11 +25,11 @@ router.post('/generateOTP',(req,res,next) =>{
     // setup email data with unicode symbols
 token =  otplib.authenticator.generate(secret , opts);
 let mailOptions = {
-    from: '"no-reply@ShareSeat.com 👻" <vsfastrack@gmail.com>', // sender address
+    from: '"[FROM]', // sender address
     to: req.body.email, // list of receivers
-    subject: 'One TIme Password for verification for ShareSeat', // Subject line
-    text: 'Hello world ?', // plain text body
-    html: '<b>One Time Password For Signup Verification at Shareseat.com</b><h1>'+token+'</h1>' // html body
+    subject: '[SUBJECT]', // Subject line
+    text: '[CONTENT]', // plain text body
+    html: '[HTML_MSG_CONTENT]' // html body
 };
 // send mail with defined transport object
 transporter.sendMail(mailOptions, (error, info) => {
